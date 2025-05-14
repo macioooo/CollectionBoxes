@@ -7,6 +7,7 @@ import org.maciejszuwarowski.domain.currencyexchange.dto.Rate;
 import org.maciejszuwarowski.domain.currencyexchange.exceptions.CurrencyNotAvailableException;
 import org.maciejszuwarowski.domain.currencyexchange.exceptions.MissingExchangeRateException;
 import org.maciejszuwarowski.domain.shared.Currency;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 import static org.maciejszuwarowski.domain.shared.Currency.*;
 
 @AllArgsConstructor
+@Service
 public class CurrencyExchangeService {
 
     private static final Set<Currency> AVAILABLE_CURRENCIES = Set.of(EUR, PLN, USD);

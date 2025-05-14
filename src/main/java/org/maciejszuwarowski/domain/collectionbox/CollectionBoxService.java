@@ -6,9 +6,14 @@ import org.maciejszuwarowski.domain.collectionbox.exceptions.CollectionBoxCannot
 import org.maciejszuwarowski.domain.collectionbox.exceptions.CollectionBoxNotAssignedException;
 import org.maciejszuwarowski.domain.collectionbox.exceptions.CollectionBoxNotFoundException;
 import org.maciejszuwarowski.domain.collectionbox.exceptions.MoneyTransferException;
+import org.maciejszuwarowski.domain.fundraisingevent.FundraisingEvent;
 import org.maciejszuwarowski.domain.fundraisingevent.FundraisingEventFacade;
+import org.maciejszuwarowski.domain.fundraisingevent.FundraisingEventRepository;
 import org.maciejszuwarowski.domain.shared.Currency;
 import org.maciejszuwarowski.domain.shared.HashGenerable;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -17,21 +22,30 @@ import java.util.stream.Collectors;
 
 import static org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacadeMessages.COLLECTION_BOX_UNREGISTERED_SUCCESSFULLY;
 
-@AllArgsConstructor
+@Service
 class CollectionBoxService {
     private final CollectionBoxRepository repository;
+    private final FundraisingEventFacade fundraisingEventFacade;
     private final HashGenerable hashGenerator;
 
-    CollectionBox createCollectionBox(String fundraisingEventId) {
-        CollectionBox newCollectionBox = new CollectionBox(hashGenerator.getHash(), fundraisingEventId);
+    CollectionBoxService(CollectionBoxRepository repository, @Lazy FundraisingEventFacade fundraisingEventFacade, HashGenerable hashGenerator) {
+        this.repository = repository;
+        this.fundraisingEventFacade = fundraisingEventFacade;
+        this.hashGenerator = hashGenerator;
+    }
+
+    @Transactional
+    CollectionBox createCollectionBox() {
+        CollectionBox newCollectionBox = new CollectionBox(hashGenerator.getHash());
         return repository.save(newCollectionBox);
     }
 
-
+    @Transactional
     CollectionBox assignCollectionBox(String collectionBoxId, String fundraisingEventId) {
         CollectionBox collectionBox = findBoxById(collectionBoxId);
+        FundraisingEvent fundraisingEvent = fundraisingEventFacade.getFundraisingEventById(fundraisingEventId);
         try {
-            collectionBox.setFundraisingEventId(fundraisingEventId);
+            collectionBox.assignToFundraisingEvent(fundraisingEvent);
         } catch (IllegalStateException e) {
             throw new CollectionBoxCannotBeAssigned(e.getMessage());
         }
@@ -39,17 +53,19 @@ class CollectionBoxService {
         return repository.save(collectionBox);
     }
 
+    @Transactional
     CollectionBoxInfoMessage unregisterCollectionBox(String collectionBoxId) {
         CollectionBox collectionBox = findBoxById(collectionBoxId);
         collectionBox.emptyContentPermanently();
         repository.save(collectionBox);
-        repository.deleteCollectionBoxById(collectionBoxId);
+        repository.deleteById(collectionBoxId);
         return CollectionBoxInfoMessage.builder()
                 .message(COLLECTION_BOX_UNREGISTERED_SUCCESSFULLY.message)
                 .build();
 
     }
 
+    @Transactional
     EmptiedCollectionBoxDto emptyCollectionBoxAndGetDataForTransfer(String collectionBoxId) {
         CollectionBox collectionBox = findBoxById(collectionBoxId);
         if (!collectionBox.isAssigned()) {
@@ -59,11 +75,11 @@ class CollectionBoxService {
         repository.save(collectionBox);
         return EmptiedCollectionBoxDto.builder()
                 .collectedAmount(contents)
-                .fundraisingEventId(collectionBox.getFundraisingEventId())
+                .fundraisingEventId(collectionBox.getAssignedFundraisingEventIdAsString())
                 .build();
     }
 
-
+    @Transactional
     TransferResultDto addMoneyToCollectionBox(String collectionBoxId, MoneyDto money) {
         CollectionBox collectionBox = findBoxById(collectionBoxId);
         BigDecimal moneyAddedToBalance = money.amount();
@@ -77,12 +93,13 @@ class CollectionBoxService {
                     .success(true)
                     .amountTransfered(moneyAddedToBalance)
                     .targetCurrency(currency)
+                    .message("Success!")
                     .build();
         }
         throw new MoneyTransferException("Couldnt transfer the money to the collection box");
 
     }
-
+    @Transactional(readOnly = true)
     List<CollectionBoxPublicInfoDto> findAllCollectionBoxes() {
         return repository.findAll()
                 .stream()
