@@ -1,9 +1,9 @@
 package org.maciejszuwarowski.domain.collectionbox;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import org.maciejszuwarowski.domain.collectionbox.exceptions.CollectionBoxCannotBeAssigned;
 import org.maciejszuwarowski.domain.collectionbox.exceptions.MoneyTransferException;
+import org.maciejszuwarowski.domain.shared.Currency;
 
 import java.math.BigDecimal;
 import java.util.Map;
