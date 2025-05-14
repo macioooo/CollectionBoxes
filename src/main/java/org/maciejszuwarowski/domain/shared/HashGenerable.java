@@ -1,4 +1,4 @@
-package org.maciejszuwarowski.domain.collectionbox;
+package org.maciejszuwarowski.domain.shared;
 
 public interface HashGenerable {
 
