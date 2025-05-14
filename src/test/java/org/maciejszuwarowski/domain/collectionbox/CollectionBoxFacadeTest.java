@@ -113,7 +113,7 @@ public class CollectionBoxFacadeTest {
             assertEquals(COLLECTION_BOX_CREATED_SUCCESSFULLY.message, result.message());
             assertEquals(collectionBoxes.size(), 1);
             assertNotNull(createdCollectionBox.getAssignedFundraisingEvent());
-            assertEquals(fundraisingEventId, createdCollectionBox.getAssignedFundraisingEvent().id());
+            assertEquals(fundraisingEventId, createdCollectionBox.getAssignedFundraisingEvent().getId());
             assertTrue(createdCollectionBox.isAssigned());
             assertTrue(createdCollectionBox.isEmpty());
         }
@@ -178,7 +178,7 @@ public class CollectionBoxFacadeTest {
             CollectionBox assignedBox = collectionBoxRepository.findById(DEFAULT_BOX_ID).orElseThrow(); // Re-fetch to check persisted state
             assertTrue(assignedBox.isAssigned());
             assertNotNull(assignedBox.getAssignedFundraisingEvent());
-            assertEquals(fundraisingEventId, assignedBox.getAssignedFundraisingEvent().id());
+            assertEquals(fundraisingEventId, assignedBox.getAssignedFundraisingEvent().getId());
         }
 
         @Test
@@ -297,6 +297,7 @@ public class CollectionBoxFacadeTest {
                     .targetCurrency(money.currency())
                     .amountTransfered(money.amount())
                     .success(true)
+                    .message("Success!")
                     .build();
             //when
             TransferResultDto transferResult = collectionBoxFacade.addMoneyToCollectionBox(existingBoxId, money);
@@ -468,7 +469,7 @@ public class CollectionBoxFacadeTest {
             //when
             EmptiedCollectionBoxDto resultDto = collectionBoxFacade.emptyCollectionBoxAndGetDataTransfer(boxId);
             assertNotNull(resultDto);
-            assertEquals(fundraisingEvent.id(), resultDto.fundraisingEventId());
+            assertEquals(fundraisingEvent.getId(), resultDto.fundraisingEventId());
             assertNotNull(resultDto.collectedAmount());
             assertThat(resultDto.collectedAmount())
                     .containsEntry(PLN, expectedPln)

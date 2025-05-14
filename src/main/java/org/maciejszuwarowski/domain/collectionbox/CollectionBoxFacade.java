@@ -2,6 +2,7 @@ package org.maciejszuwarowski.domain.collectionbox;
 
 import lombok.AllArgsConstructor;
 import org.maciejszuwarowski.domain.collectionbox.dto.*;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import static org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacadeMess
 import static org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacadeMessages.COLLECTION_BOX_CREATED_SUCCESSFULLY;
 
 @AllArgsConstructor
-@RestController
+@Component
 public class CollectionBoxFacade {
 
     private final CollectionBoxService service;
@@ -24,6 +25,7 @@ public class CollectionBoxFacade {
         }
         return CollectionBoxInfoMessage.builder()
                 .message(COLLECTION_BOX_CREATED_SUCCESSFULLY.message)
+                .collectionBoxId(box.getId())
                 .build();
     }
 
@@ -36,11 +38,14 @@ public class CollectionBoxFacade {
         CollectionBox box = service.assignCollectionBox(collectionBoxId, fundraisingEventId);
         return CollectionBoxInfoMessage.builder()
                 .message(COLLECTION_BOX_ASSIGNED_SUCCESSFULLY.message)
+                .collectionBoxId(box.getId())
                 .build();
     }
 
     public CollectionBoxInfoMessage unregisterCollectionBox(String collectionBoxId) {
-        return service.unregisterCollectionBox(collectionBoxId);
+        String message = service.unregisterCollectionBox(collectionBoxId).message();
+        return new CollectionBoxInfoMessage(message, collectionBoxId);
+
     }
 
     public TransferResultDto addMoneyToCollectionBox(String collectionBoxId, MoneyDto money) {

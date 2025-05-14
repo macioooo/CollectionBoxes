@@ -4,6 +4,7 @@ import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.repository.query.FluentQuery;
 
 import java.util.List;
 import java.util.Map;
@@ -11,34 +12,13 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-public class FundraisingEventRepositoryInMemoryImpl implements FundraisingEventRepository{
+public class FundraisingEventRepositoryInMemoryImpl implements FundraisingEventRepository {
 
     Map<String, FundraisingEvent> inMemoryDb = new ConcurrentHashMap<>();
 
-
     @Override
     public FundraisingEvent save(FundraisingEvent fundraisingEvent) {
-        return inMemoryDb.put(fundraisingEvent.id(), fundraisingEvent);
-    }
-
-    @Override
-    public List saveAll(Iterable entities) {
-        return null;
-    }
-
-    @Override
-    public Object save(Object entity) {
-        return null;
-    }
-
-    @Override
-    public Optional findById(Object o) {
-        return Optional.empty();
-    }
-
-    @Override
-    public boolean existsById(Object o) {
-        return false;
+        return inMemoryDb.put(fundraisingEvent.getId(), fundraisingEvent);
     }
 
     @Override
@@ -47,7 +27,19 @@ public class FundraisingEventRepositoryInMemoryImpl implements FundraisingEventR
     }
 
     @Override
-    public List findAllById(Iterable iterable) {
+    public Optional<FundraisingEvent> findById(String id) {
+        return Optional.ofNullable(inMemoryDb.get(id));
+    }
+
+
+    @Override
+    public <S extends FundraisingEvent> List<S> saveAll(Iterable<S> entities) {
+        return null;
+    }
+
+
+    @Override
+    public List<FundraisingEvent> findAllById(Iterable<String> strings) {
         return null;
     }
 
@@ -57,22 +49,22 @@ public class FundraisingEventRepositoryInMemoryImpl implements FundraisingEventR
     }
 
     @Override
-    public void deleteById(Object o) {
+    public void deleteById(String s) {
 
     }
 
     @Override
-    public void delete(Object entity) {
+    public void delete(FundraisingEvent entity) {
 
     }
 
     @Override
-    public void deleteAllById(Iterable iterable) {
+    public void deleteAllById(Iterable<? extends String> strings) {
 
     }
 
     @Override
-    public void deleteAll(Iterable entities) {
+    public void deleteAll(Iterable<? extends FundraisingEvent> entities) {
 
     }
 
@@ -81,9 +73,10 @@ public class FundraisingEventRepositoryInMemoryImpl implements FundraisingEventR
 
     }
 
+
     @Override
-    public Optional<FundraisingEvent> findById(String id) {
-        return Optional.ofNullable(inMemoryDb.get(id));
+    public boolean existsById(String s) {
+        return false;
     }
 
     @Override
@@ -92,12 +85,22 @@ public class FundraisingEventRepositoryInMemoryImpl implements FundraisingEventR
     }
 
     @Override
-    public void deleteAllInBatch(Iterable entities) {
+    public <S extends FundraisingEvent> S saveAndFlush(S entity) {
+        return null;
+    }
+
+    @Override
+    public <S extends FundraisingEvent> List<S> saveAllAndFlush(Iterable<S> entities) {
+        return null;
+    }
+
+    @Override
+    public void deleteAllInBatch(Iterable<FundraisingEvent> entities) {
 
     }
 
     @Override
-    public void deleteAllByIdInBatch(Iterable iterable) {
+    public void deleteAllByIdInBatch(Iterable<String> strings) {
 
     }
 
@@ -107,72 +110,62 @@ public class FundraisingEventRepositoryInMemoryImpl implements FundraisingEventR
     }
 
     @Override
-    public Object getOne(Object o) {
+    public FundraisingEvent getOne(String s) {
         return null;
     }
 
     @Override
-    public Object getById(Object o) {
+    public FundraisingEvent getById(String s) {
         return null;
     }
 
     @Override
-    public Object getReferenceById(Object o) {
+    public FundraisingEvent getReferenceById(String s) {
         return null;
     }
 
     @Override
-    public List findAll(Example example, Sort sort) {
-        return null;
-    }
-
-    @Override
-    public List findAll(Example example) {
-        return null;
-    }
-
-    @Override
-    public List saveAllAndFlush(Iterable entities) {
-        return null;
-    }
-
-    @Override
-    public Object saveAndFlush(Object entity) {
-        return null;
-    }
-
-    @Override
-    public List findAll(Sort sort) {
-        return null;
-    }
-
-    @Override
-    public Page findAll(Pageable pageable) {
-        return null;
-    }
-
-    @Override
-    public Optional findOne(Example example) {
+    public <S extends FundraisingEvent> Optional<S> findOne(Example<S> example) {
         return Optional.empty();
     }
 
     @Override
-    public Page findAll(Example example, Pageable pageable) {
+    public <S extends FundraisingEvent> List<S> findAll(Example<S> example) {
         return null;
     }
 
     @Override
-    public long count(Example example) {
+    public <S extends FundraisingEvent> List<S> findAll(Example<S> example, Sort sort) {
+        return null;
+    }
+
+    @Override
+    public <S extends FundraisingEvent> Page<S> findAll(Example<S> example, Pageable pageable) {
+        return null;
+    }
+
+    @Override
+    public <S extends FundraisingEvent> long count(Example<S> example) {
         return 0;
     }
 
     @Override
-    public boolean exists(Example example) {
+    public <S extends FundraisingEvent> boolean exists(Example<S> example) {
         return false;
     }
 
     @Override
-    public Object findBy(Example example, Function queryFunction) {
+    public <S extends FundraisingEvent, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) {
+        return null;
+    }
+
+    @Override
+    public List<FundraisingEvent> findAll(Sort sort) {
+        return null;
+    }
+
+    @Override
+    public Page<FundraisingEvent> findAll(Pageable pageable) {
         return null;
     }
 }

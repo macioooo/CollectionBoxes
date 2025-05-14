@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @Embeddable
-class ContentOfCollectionBox {
+public class ContentOfCollectionBox {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "collection_box_entries", joinColumns =  @JoinColumn(name = "collection_box_id"))
     @MapKeyColumn(name = "currency_code")

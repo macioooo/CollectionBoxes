@@ -4,6 +4,7 @@ import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.repository.query.FluentQuery;
 
 import java.util.List;
 import java.util.Map;
@@ -28,82 +29,36 @@ public class InMemoryCollectionBoxRepositoryImpl implements CollectionBoxReposit
     }
 
     @Override
-    public List saveAll(Iterable entities) {
-        return null;
-    }
-
-    @Override
-    public Object save(Object entity) {
-        return null;
-    }
-
-    @Override
-    public Optional findById(Object o) {
-        return Optional.empty();
-    }
-
-    @Override
-    public boolean existsById(Object o) {
-        return false;
-    }
-
-    @Override
     public List<CollectionBox> findAll() {
         return database.values().stream().toList();
     }
 
     @Override
-    public List findAllById(Iterable iterable) {
-        return null;
+    public void deleteById(String id) {
+        database.remove(id);
     }
-
-    @Override
-    public long count() {
-        return 0;
-    }
-
-    @Override
-    public void deleteById(Object o) {
-
-    }
-
-    @Override
-    public void delete(Object entity) {
-
-    }
-
-    @Override
-    public void deleteAllById(Iterable iterable) {
-
-    }
-
-    @Override
-    public void deleteAll(Iterable entities) {
-
-    }
-
-    @Override
-    public void deleteAll() {
-
-    }
-
-    @Override
-    public Optional<CollectionBox> deleteById(String id) {
-        return Optional.ofNullable(database.remove(id));
-    }
-
     @Override
     public void flush() {
 
     }
 
     @Override
-    public void deleteAllInBatch(Iterable entities) {
+    public <S extends CollectionBox> S saveAndFlush(S entity) {
+        return null;
+    }
+
+    @Override
+    public <S extends CollectionBox> List<S> saveAllAndFlush(Iterable<S> entities) {
+        return null;
+    }
+
+    @Override
+    public void deleteAllInBatch(Iterable<CollectionBox> entities) {
 
     }
 
     @Override
-    public void deleteAllByIdInBatch(Iterable iterable) {
+    public void deleteAllByIdInBatch(Iterable<String> strings) {
 
     }
 
@@ -113,72 +68,108 @@ public class InMemoryCollectionBoxRepositoryImpl implements CollectionBoxReposit
     }
 
     @Override
-    public Object getOne(Object o) {
+    public CollectionBox getOne(String s) {
         return null;
     }
 
     @Override
-    public Object getById(Object o) {
+    public CollectionBox getById(String s) {
         return null;
     }
 
     @Override
-    public Object getReferenceById(Object o) {
+    public CollectionBox getReferenceById(String s) {
         return null;
     }
 
     @Override
-    public List findAll(Example example, Sort sort) {
-        return null;
-    }
-
-    @Override
-    public List findAll(Example example) {
-        return null;
-    }
-
-    @Override
-    public List saveAllAndFlush(Iterable entities) {
-        return null;
-    }
-
-    @Override
-    public Object saveAndFlush(Object entity) {
-        return null;
-    }
-
-    @Override
-    public List findAll(Sort sort) {
-        return null;
-    }
-
-    @Override
-    public Page findAll(Pageable pageable) {
-        return null;
-    }
-
-    @Override
-    public Optional findOne(Example example) {
+    public <S extends CollectionBox> Optional<S> findOne(Example<S> example) {
         return Optional.empty();
     }
 
     @Override
-    public Page findAll(Example example, Pageable pageable) {
+    public <S extends CollectionBox> List<S> findAll(Example<S> example) {
         return null;
     }
 
     @Override
-    public long count(Example example) {
+    public <S extends CollectionBox> List<S> findAll(Example<S> example, Sort sort) {
+        return null;
+    }
+
+    @Override
+    public <S extends CollectionBox> Page<S> findAll(Example<S> example, Pageable pageable) {
+        return null;
+    }
+
+    @Override
+    public <S extends CollectionBox> long count(Example<S> example) {
         return 0;
     }
 
     @Override
-    public boolean exists(Example example) {
+    public <S extends CollectionBox> boolean exists(Example<S> example) {
         return false;
     }
 
     @Override
-    public Object findBy(Example example, Function queryFunction) {
+    public <S extends CollectionBox, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) {
+        return null;
+    }
+
+
+
+    @Override
+    public <S extends CollectionBox> List<S> saveAll(Iterable<S> entities) {
+        return null;
+    }
+
+
+    @Override
+    public boolean existsById(String s) {
+        return false;
+    }
+
+
+    @Override
+    public List<CollectionBox> findAllById(Iterable<String> strings) {
+        return null;
+    }
+
+    @Override
+    public long count() {
+        return 0;
+    }
+
+
+
+    @Override
+    public void delete(CollectionBox entity) {
+
+    }
+
+    @Override
+    public void deleteAllById(Iterable<? extends String> strings) {
+
+    }
+
+    @Override
+    public void deleteAll(Iterable<? extends CollectionBox> entities) {
+
+    }
+
+    @Override
+    public void deleteAll() {
+
+    }
+
+    @Override
+    public List<CollectionBox> findAll(Sort sort) {
+        return null;
+    }
+
+    @Override
+    public Page<CollectionBox> findAll(Pageable pageable) {
         return null;
     }
 }

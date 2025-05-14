@@ -42,7 +42,7 @@ public class CollectionBox {
 
 
     public String getAssignedFundraisingEventIdAsString() {
-        return this.assignedFundraisingEvent != null ? this.assignedFundraisingEvent.id() : null;
+        return this.assignedFundraisingEvent != null ? this.assignedFundraisingEvent.getId() : null;
     }
 
     public void assignToFundraisingEvent(FundraisingEvent eventToAssign) {

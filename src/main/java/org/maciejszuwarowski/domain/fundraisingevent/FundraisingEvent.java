@@ -1,22 +1,35 @@
 package org.maciejszuwarowski.domain.fundraisingevent;
 
 import jakarta.persistence.*;
-import lombok.Builder;
+import lombok.Builder; // Możesz nadal używać @Builder
+import lombok.Getter;
+import lombok.NoArgsConstructor; // Dodaj konstruktor bezargumentowy
+import lombok.AllArgsConstructor; // Dodaj konstruktor z wszystkimi argumentami
+import lombok.Setter; // Jeśli potrzebujesz setterów
 import org.maciejszuwarowski.domain.shared.Currency;
-
 import java.math.BigDecimal;
+import java.util.Objects;
 
-@Builder
-@Table(name = "fundraising_events")
 @Entity
-public record FundraisingEvent(
+@Table(name = "fundraising_events")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class FundraisingEvent {
+
         @Id
-        String id,
+        private String id;
+
         @Column(nullable = false)
-        String nameOfFundraisingEvent,
+        private String nameOfFundraisingEvent;
+
         @Enumerated(EnumType.STRING)
         @Column(nullable = false)
-        Currency currencyOfTheMoneyAccount,
-        @Column(nullable = false, precision = 19, scale = 4)
-        BigDecimal amountOfMoney) {
+        private Currency currencyOfTheMoneyAccount;
+
+        @Column(nullable = false, precision = 19, scale = 2)
+        private BigDecimal amountOfMoney;
+
 }

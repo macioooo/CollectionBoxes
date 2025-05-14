@@ -1,19 +1,22 @@
 package org.maciejszuwarowski.domain.fundraisingevent;
 
 import lombok.AllArgsConstructor;
+import org.maciejszuwarowski.domain.fundraisingevent.dto.CreateFundraisingEventDto;
 import org.maciejszuwarowski.domain.fundraisingevent.dto.FinancialReportDto;
 import org.maciejszuwarowski.domain.fundraisingevent.dto.FundraisingEventMessageDto;
+import org.maciejszuwarowski.domain.fundraisingevent.dto.TransferResultDto;
 import org.maciejszuwarowski.domain.shared.Currency;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @AllArgsConstructor
-@RestController
+@Component
 public class FundraisingEventFacade {
     private final FundraisingEventService fundraisingEventService;
 
-    public FundraisingEventMessageDto createFundraisingEvent(String nameOfTheFundraisingEvent, Currency currency) {
+    public CreateFundraisingEventDto createFundraisingEvent(String nameOfTheFundraisingEvent, Currency currency) {
         return fundraisingEventService.createFundraisingEvent(nameOfTheFundraisingEvent, currency);
     }
 
@@ -21,7 +24,7 @@ public class FundraisingEventFacade {
         return fundraisingEventService.createFinancialReport();
     }
 
-    public FundraisingEventMessageDto transferMoneyFromCollectionBox(String collectionBoxId) {
+    public TransferResultDto transferMoneyFromCollectionBox(String collectionBoxId) {
         return fundraisingEventService.fetchMoneyFromCollectionBoxAndTransferItToFundraisingEvent(collectionBoxId);
     }
 

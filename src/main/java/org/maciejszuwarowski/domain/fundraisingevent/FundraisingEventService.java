@@ -6,17 +6,21 @@ import org.maciejszuwarowski.domain.collectionbox.dto.EmptiedCollectionBoxDto;
 import org.maciejszuwarowski.domain.currencyexchange.CurrencyExchangeFacade;
 import org.maciejszuwarowski.domain.currencyexchange.dto.ExchangeRateDto;
 import org.maciejszuwarowski.domain.currencyexchange.exceptions.MissingExchangeRateException;
+import org.maciejszuwarowski.domain.fundraisingevent.dto.CreateFundraisingEventDto;
 import org.maciejszuwarowski.domain.fundraisingevent.dto.FinancialReportDto;
 import org.maciejszuwarowski.domain.fundraisingevent.dto.FundraisingEventMessageDto;
+import org.maciejszuwarowski.domain.fundraisingevent.dto.TransferResultDto;
 import org.maciejszuwarowski.domain.fundraisingevent.exceptions.FundraisingEventNotFoundException;
 import org.maciejszuwarowski.domain.shared.Currency;
 import org.maciejszuwarowski.domain.shared.HashGenerable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-import static org.maciejszuwarowski.domain.fundraisingevent.FundraisingEventMessages.*;
+import static org.maciejszuwarowski.domain.fundraisingevent.FundraisingEventMessages.FUNDRAISING_EVENT_CREATED_SUCCESSFULLY;
+import static org.maciejszuwarowski.domain.fundraisingevent.FundraisingEventMessages.MONEY_TRANSFERRED_TO_FUNDRAISING_EVENT_ACCOUNT_SUCCESSFULLY;
 
 @AllArgsConstructor
 @Service
@@ -26,7 +30,8 @@ class FundraisingEventService {
     private final CollectionBoxFacade collectionBoxFacade;
     private final CurrencyExchangeFacade currencyExchangeFacade;
 
-    FundraisingEventMessageDto createFundraisingEvent(String nameOfTheFundraisingEvent, Currency currency) {
+    @Transactional
+    CreateFundraisingEventDto createFundraisingEvent(String nameOfTheFundraisingEvent, Currency currency) {
 
         FundraisingEvent newFundraisingEvent = FundraisingEvent.builder()
                 .id(hashGenerator.getHash())
@@ -35,39 +40,38 @@ class FundraisingEventService {
                 .amountOfMoney(BigDecimal.ZERO)
                 .build();
         fundraisingEventRepository.save(newFundraisingEvent);
-        return new FundraisingEventMessageDto(FUNDRAISING_EVENT_CREATED_SUCCESSFULLY.message);
+        return new CreateFundraisingEventDto(FUNDRAISING_EVENT_CREATED_SUCCESSFULLY.message, newFundraisingEvent.getId(), nameOfTheFundraisingEvent, currency);
     }
-
+    @Transactional(readOnly = true)
     List<FinancialReportDto> createFinancialReport() {
         List<FundraisingEvent> fundraisingEvents = fundraisingEventRepository.findAll();
         List<FinancialReportDto> financialReportOfAllFundraisingEvents = fundraisingEvents.stream().map(
                 fundraisingEvent -> new FinancialReportDto(
-                        fundraisingEvent.nameOfFundraisingEvent(),
-                        fundraisingEvent.amountOfMoney(),
-                        fundraisingEvent.currencyOfTheMoneyAccount()
+                        fundraisingEvent.getNameOfFundraisingEvent(),
+                        fundraisingEvent.getAmountOfMoney(),
+                        fundraisingEvent.getCurrencyOfTheMoneyAccount()
                 )
         ).toList();
         return financialReportOfAllFundraisingEvents;
     }
-
-    FundraisingEventMessageDto fetchMoneyFromCollectionBoxAndTransferItToFundraisingEvent(String collectionBoxId) {
+    @Transactional
+    TransferResultDto fetchMoneyFromCollectionBoxAndTransferItToFundraisingEvent(String collectionBoxId) {
         //getting data from colleciton box facade
         EmptiedCollectionBoxDto emptiedCollectionBoxDto = collectionBoxFacade.emptyCollectionBoxAndGetDataTransfer(collectionBoxId);
         String fundraisingEventId = emptiedCollectionBoxDto.fundraisingEventId();
-
         //prep variable for adding money to fundraising event account
         FundraisingEvent fundraisingEvent = findFundraisingEventById(fundraisingEventId);
-        Currency targetCurrency = fundraisingEvent.currencyOfTheMoneyAccount(); //fetching the currency that we will be exchanging money to
+        Currency targetCurrency = fundraisingEvent.getCurrencyOfTheMoneyAccount(); //fetching the currency that we will be exchanging money to
         BigDecimal collectedMoneyInTargetCurrency = calculateAndExchangeCurrencyRatesForTargetCurrency(targetCurrency, emptiedCollectionBoxDto);
-        BigDecimal newAccountBalance = fundraisingEvent.amountOfMoney().add(collectedMoneyInTargetCurrency);
+        BigDecimal newAccountBalance = fundraisingEvent.getAmountOfMoney().add(collectedMoneyInTargetCurrency);
         FundraisingEvent fundraisingEventAfterTransferingMoney = FundraisingEvent.builder()
-                .id(fundraisingEvent.id())
+                .id(fundraisingEvent.getId())
                 .currencyOfTheMoneyAccount(targetCurrency)
-                .nameOfFundraisingEvent(fundraisingEvent.nameOfFundraisingEvent())
+                .nameOfFundraisingEvent(fundraisingEvent.getNameOfFundraisingEvent())
                 .amountOfMoney(newAccountBalance)
                 .build();
         fundraisingEventRepository.save(fundraisingEventAfterTransferingMoney);
-        return new FundraisingEventMessageDto(MONEY_TRANSFERRED_TO_FUNDRAISING_EVENT_ACCOUNT_SUCCESSFULLY.message);
+        return new TransferResultDto(MONEY_TRANSFERRED_TO_FUNDRAISING_EVENT_ACCOUNT_SUCCESSFULLY.message, collectionBoxId, collectedMoneyInTargetCurrency);
     }
 
     private BigDecimal calculateAndExchangeCurrencyRatesForTargetCurrency(Currency targetCurrency, EmptiedCollectionBoxDto emptiedCollectionBoxDto) {
@@ -88,7 +92,6 @@ class FundraisingEventService {
 
         return fundraisingEventRepository.findById(fundraisingEventId).orElseThrow(() -> new FundraisingEventNotFoundException("Fundraising event not found"));
     }
-
 
 
 }

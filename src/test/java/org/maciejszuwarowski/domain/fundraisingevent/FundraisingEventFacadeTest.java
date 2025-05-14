@@ -9,8 +9,10 @@ import org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacade;
 import org.maciejszuwarowski.domain.collectionbox.dto.EmptiedCollectionBoxDto;
 import org.maciejszuwarowski.domain.currencyexchange.CurrencyExchangeFacade;
 import org.maciejszuwarowski.domain.currencyexchange.dto.ExchangeRateDto;
+import org.maciejszuwarowski.domain.fundraisingevent.dto.CreateFundraisingEventDto;
 import org.maciejszuwarowski.domain.fundraisingevent.dto.FinancialReportDto;
 import org.maciejszuwarowski.domain.fundraisingevent.dto.FundraisingEventMessageDto;
+import org.maciejszuwarowski.domain.fundraisingevent.dto.TransferResultDto;
 import org.maciejszuwarowski.domain.fundraisingevent.exceptions.FundraisingEventNotFoundException;
 import org.maciejszuwarowski.domain.shared.Currency;
 import org.maciejszuwarowski.domain.shared.HashGenerable;
@@ -68,7 +70,7 @@ class FundraisingEventFacadeTest {
             String expectedHash = "123"; //default
 
             //when
-            FundraisingEventMessageDto resultDto = fundraisingEventFacade.createFundraisingEvent(defaultEventName, defaultCurrency);
+            CreateFundraisingEventDto resultDto = fundraisingEventFacade.createFundraisingEvent(defaultEventName, defaultCurrency);
 
             //then
             assertEquals(FundraisingEventMessages.FUNDRAISING_EVENT_CREATED_SUCCESSFULLY.message, resultDto.message());
@@ -76,10 +78,10 @@ class FundraisingEventFacadeTest {
             Optional<FundraisingEvent> eventOptional = fundraisingEventRepository.findById(expectedHash);
             assertTrue(eventOptional.isPresent(), "Event should be stored in the repository.");
             FundraisingEvent storedEvent = eventOptional.get();
-            assertEquals(expectedHash, storedEvent.id());
-            assertEquals(defaultEventName, storedEvent.nameOfFundraisingEvent());
-            assertEquals(defaultCurrency, storedEvent.currencyOfTheMoneyAccount());
-            assertEquals(0, BigDecimal.ZERO.compareTo(storedEvent.amountOfMoney()), "Initial amount should be zero.");
+            assertEquals(expectedHash, storedEvent.getId());
+            assertEquals(defaultEventName, storedEvent.getNameOfFundraisingEvent());
+            assertEquals(defaultCurrency, storedEvent.getCurrencyOfTheMoneyAccount());
+            assertEquals(0, BigDecimal.ZERO.compareTo(storedEvent.getAmountOfMoney()), "Initial amount should be zero.");
         }
 
         @Test
@@ -95,13 +97,13 @@ class FundraisingEventFacadeTest {
             Currency eventCurrency = Currency.USD;
 
             // When
-            FundraisingEventMessageDto resultDto = fundraisingEventFacade.createFundraisingEvent(eventName, eventCurrency);
+            CreateFundraisingEventDto resultDto = fundraisingEventFacade.createFundraisingEvent(eventName, eventCurrency);
 
             // Then
             assertEquals(FundraisingEventMessages.FUNDRAISING_EVENT_CREATED_SUCCESSFULLY.message, resultDto.message());
             Optional<FundraisingEvent> eventOptional = fundraisingEventRepository.findById(specificHash);
             assertTrue(eventOptional.isPresent());
-            assertEquals(eventName, eventOptional.get().nameOfFundraisingEvent());
+            assertEquals(eventName, eventOptional.get().getNameOfFundraisingEvent());
         }
     }
 
@@ -185,7 +187,7 @@ class FundraisingEventFacadeTest {
             when(currencyExchangeFacade.getCurrencyRatesForUsdPlnAndEur(eventCurrency)).thenReturn(exchangeRateDto);
 
             //when
-            FundraisingEventMessageDto resultDto = fundraisingEventFacade.transferMoneyFromCollectionBox(collectionBoxId);
+            TransferResultDto resultDto = fundraisingEventFacade.transferMoneyFromCollectionBox(collectionBoxId);
 
             //then
             assertEquals(FundraisingEventMessages.MONEY_TRANSFERRED_TO_FUNDRAISING_EVENT_ACCOUNT_SUCCESSFULLY.message, resultDto.message());
@@ -202,8 +204,8 @@ class FundraisingEventFacadeTest {
             BigDecimal transferredInPLN = new BigDecimal("92.20");
             BigDecimal expectedFinalBalance = initialEventBalance.add(transferredInPLN); // 50.00 + 92.20 = 142.20
 
-            assertEquals(0, expectedFinalBalance.compareTo(updatedEvent.amountOfMoney()),
-                    "Final balance is incorrect. Expected: " + expectedFinalBalance + ", Got: " + updatedEvent.amountOfMoney());
+            assertEquals(0, expectedFinalBalance.compareTo(updatedEvent.getAmountOfMoney()),
+                    "Final balance is incorrect. Expected: " + expectedFinalBalance + ", Got: " + updatedEvent.getAmountOfMoney());
         }
 
         @Test
@@ -226,7 +228,7 @@ class FundraisingEventFacadeTest {
 
             Optional<FundraisingEvent> originalEventOptional = fundraisingEventRepository.findById(existingEventId);
             assertTrue(originalEventOptional.isPresent());
-            assertEquals(0, initialEventBalance.compareTo(originalEventOptional.get().amountOfMoney()), "Original event balance should not change.");
+            assertEquals(0, initialEventBalance.compareTo(originalEventOptional.get().getAmountOfMoney()), "Original event balance should not change.");
         }
     }
 }

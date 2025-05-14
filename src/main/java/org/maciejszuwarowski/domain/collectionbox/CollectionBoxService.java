@@ -8,8 +8,10 @@ import org.maciejszuwarowski.domain.collectionbox.exceptions.CollectionBoxNotFou
 import org.maciejszuwarowski.domain.collectionbox.exceptions.MoneyTransferException;
 import org.maciejszuwarowski.domain.fundraisingevent.FundraisingEvent;
 import org.maciejszuwarowski.domain.fundraisingevent.FundraisingEventFacade;
+import org.maciejszuwarowski.domain.fundraisingevent.FundraisingEventRepository;
 import org.maciejszuwarowski.domain.shared.Currency;
 import org.maciejszuwarowski.domain.shared.HashGenerable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,12 +22,17 @@ import java.util.stream.Collectors;
 
 import static org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacadeMessages.COLLECTION_BOX_UNREGISTERED_SUCCESSFULLY;
 
-@AllArgsConstructor
 @Service
 class CollectionBoxService {
     private final CollectionBoxRepository repository;
     private final FundraisingEventFacade fundraisingEventFacade;
     private final HashGenerable hashGenerator;
+
+    CollectionBoxService(CollectionBoxRepository repository, @Lazy FundraisingEventFacade fundraisingEventFacade, HashGenerable hashGenerator) {
+        this.repository = repository;
+        this.fundraisingEventFacade = fundraisingEventFacade;
+        this.hashGenerator = hashGenerator;
+    }
 
     @Transactional
     CollectionBox createCollectionBox() {
@@ -86,6 +93,7 @@ class CollectionBoxService {
                     .success(true)
                     .amountTransfered(moneyAddedToBalance)
                     .targetCurrency(currency)
+                    .message("Success!")
                     .build();
         }
         throw new MoneyTransferException("Couldnt transfer the money to the collection box");
