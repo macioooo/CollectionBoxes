@@ -1,6 +1,8 @@
-package org.maciejszuwarowski.domain.collectionbox;
+package org.maciejszuwarowski.domain;
 
-public class HashGeneratorTestImpl implements HashGenerable{
+import org.maciejszuwarowski.domain.shared.HashGenerable;
+
+public class HashGeneratorTestImpl implements HashGenerable {
 
     private final String hash;
 
