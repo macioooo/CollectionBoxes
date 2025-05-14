@@ -5,6 +5,7 @@ import org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacade;
 import org.maciejszuwarowski.domain.collectionbox.dto.EmptiedCollectionBoxDto;
 import org.maciejszuwarowski.domain.currencyexchange.CurrencyExchangeFacade;
 import org.maciejszuwarowski.domain.currencyexchange.dto.ExchangeRateDto;
+import org.maciejszuwarowski.domain.currencyexchange.exceptions.MissingExchangeRateException;
 import org.maciejszuwarowski.domain.fundraisingevent.dto.FinancialReportDto;
 import org.maciejszuwarowski.domain.fundraisingevent.dto.FundraisingEventMessageDto;
 import org.maciejszuwarowski.domain.fundraisingevent.exceptions.FundraisingEventNotFoundException;
@@ -30,7 +31,7 @@ class FundraisingEventService {
                 .nameOfFundraisingEvent(nameOfTheFundraisingEvent)
                 .currencyOfTheMoneyAccount(currency)
                 .collectionBoxId(null)
-                .amountOfMoney(new BigDecimal("0.00"))
+                .amountOfMoney(BigDecimal.ZERO)
                 .build();
         fundraisingEventRepository.save(newFundraisingEvent);
         return new FundraisingEventMessageDto(FUNDRAISING_EVENT_CREATED_SUCCESSFULLY.message);
@@ -70,12 +71,15 @@ class FundraisingEventService {
     }
 
     private BigDecimal calculateAndExchangeCurrencyRatesForTargetCurrency(Currency targetCurrency, EmptiedCollectionBoxDto emptiedCollectionBoxDto) {
-        BigDecimal amountOfMoneyToTransferInProperCurrency = new BigDecimal("0.00");
+        BigDecimal amountOfMoneyToTransferInProperCurrency = BigDecimal.ZERO;
         ExchangeRateDto currencyRatesForUsdPlnAndEur = currencyExchangeFacade.getCurrencyRatesForUsdPlnAndEur(targetCurrency);
         for (Currency sourceCurrency : emptiedCollectionBoxDto.collectedAmount().keySet()) {
             BigDecimal rateForSourceCurrency = currencyRatesForUsdPlnAndEur.exchangeRate().get(sourceCurrency);
+            if (rateForSourceCurrency == null) {
+                throw new MissingExchangeRateException("Exchange rate not found for currency:" + sourceCurrency + " to " + targetCurrency);
+            }
             BigDecimal money = emptiedCollectionBoxDto.collectedAmount().get(sourceCurrency).multiply(rateForSourceCurrency);
-            amountOfMoneyToTransferInProperCurrency.add(money);
+            amountOfMoneyToTransferInProperCurrency = amountOfMoneyToTransferInProperCurrency.add(money);
         }
         return amountOfMoneyToTransferInProperCurrency;
     }
@@ -85,18 +89,6 @@ class FundraisingEventService {
         return fundraisingEventRepository.findById(fundraisingEventId).orElseThrow(() -> new FundraisingEventNotFoundException("Fundraising event not found"));
     }
 
-    FundraisingEventMessageDto updateFundraisingEvent(String fundraisingEventId, String collectionBoxId) {
-        FundraisingEvent fundraisingEvent = findFundraisingEventById(fundraisingEventId);
-        FundraisingEvent updatedFundraisingEvent = FundraisingEvent.builder()
-                .amountOfMoney(fundraisingEvent.amountOfMoney())
-                .nameOfFundraisingEvent(fundraisingEvent.nameOfFundraisingEvent())
-                .id(fundraisingEvent.id())
-                .currencyOfTheMoneyAccount(fundraisingEvent.currencyOfTheMoneyAccount())
-                .collectionBoxId(collectionBoxId)
-                .build();
-        fundraisingEventRepository.save(updatedFundraisingEvent);
-        return new FundraisingEventMessageDto(FUNDRAISING_EVENT_SAVED_SUCCESSFULLY.message);
-    }
 
 
 }
