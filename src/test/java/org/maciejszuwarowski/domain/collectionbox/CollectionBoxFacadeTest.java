@@ -3,8 +3,11 @@ package org.maciejszuwarowski.domain.collectionbox;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.maciejszuwarowski.domain.HashGeneratorTestImpl;
 import org.maciejszuwarowski.domain.collectionbox.dto.*;
 import org.maciejszuwarowski.domain.collectionbox.exceptions.*;
+import org.maciejszuwarowski.domain.shared.Currency;
+import org.maciejszuwarowski.domain.shared.HashGenerable;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -15,9 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacadeMessages.COLLECTION_BOX_ASSIGNED_SUCCESSFULLY;
 import static org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacadeMessages.COLLECTION_BOX_CREATED_SUCCESSFULLY;
-import static org.maciejszuwarowski.domain.collectionbox.Currency.*;
+import static org.maciejszuwarowski.domain.shared.Currency.*;
 
 public class CollectionBoxFacadeTest {
+
     private CollectionBoxFacade collectionBoxFacade;
     private CollectionBoxRepository collectionBoxRepository;
     private CollectionBoxService collectionBoxService;
@@ -29,6 +33,7 @@ public class CollectionBoxFacadeTest {
         hashGenerator = new HashGeneratorTestImpl();
         collectionBoxService = new CollectionBoxService(collectionBoxRepository, hashGenerator);
         collectionBoxFacade = new CollectionBoxFacade(collectionBoxService);
+
     }
 
 

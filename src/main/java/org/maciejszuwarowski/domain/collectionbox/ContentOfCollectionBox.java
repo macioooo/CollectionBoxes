@@ -2,6 +2,7 @@ package org.maciejszuwarowski.domain.collectionbox;
 
 
 import org.maciejszuwarowski.domain.collectionbox.exceptions.AmountOfMoneyLessThanZeroException;
+import org.maciejszuwarowski.domain.shared.Currency;
 
 import java.math.BigDecimal;
 import java.util.EnumMap;

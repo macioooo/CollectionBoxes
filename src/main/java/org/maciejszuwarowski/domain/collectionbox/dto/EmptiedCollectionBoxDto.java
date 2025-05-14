@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 
 import lombok.Builder;
-import org.maciejszuwarowski.domain.collectionbox.Currency;
+import org.maciejszuwarowski.domain.shared.Currency;
 @Builder
 public record EmptiedCollectionBoxDto(String fundraisingEventId, Map<Currency, BigDecimal> collectedAmount) {
 }

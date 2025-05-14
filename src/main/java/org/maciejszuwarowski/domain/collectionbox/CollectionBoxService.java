@@ -6,11 +6,13 @@ import org.maciejszuwarowski.domain.collectionbox.exceptions.CollectionBoxCannot
 import org.maciejszuwarowski.domain.collectionbox.exceptions.CollectionBoxNotAssignedException;
 import org.maciejszuwarowski.domain.collectionbox.exceptions.CollectionBoxNotFoundException;
 import org.maciejszuwarowski.domain.collectionbox.exceptions.MoneyTransferException;
+import org.maciejszuwarowski.domain.fundraisingevent.FundraisingEventFacade;
+import org.maciejszuwarowski.domain.shared.Currency;
+import org.maciejszuwarowski.domain.shared.HashGenerable;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacadeMessages.COLLECTION_BOX_UNREGISTERED_SUCCESSFULLY;
@@ -33,6 +35,7 @@ class CollectionBoxService {
         } catch (IllegalStateException e) {
             throw new CollectionBoxCannotBeAssigned(e.getMessage());
         }
+
         return repository.save(collectionBox);
     }
 
