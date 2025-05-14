@@ -11,6 +11,7 @@ import org.maciejszuwarowski.domain.fundraisingevent.dto.FundraisingEventMessage
 import org.maciejszuwarowski.domain.fundraisingevent.exceptions.FundraisingEventNotFoundException;
 import org.maciejszuwarowski.domain.shared.Currency;
 import org.maciejszuwarowski.domain.shared.HashGenerable;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.List;
 import static org.maciejszuwarowski.domain.fundraisingevent.FundraisingEventMessages.*;
 
 @AllArgsConstructor
+@Service
 class FundraisingEventService {
     private final FundraisingEventRepository fundraisingEventRepository;
     private final HashGenerable hashGenerator;
@@ -30,7 +32,6 @@ class FundraisingEventService {
                 .id(hashGenerator.getHash())
                 .nameOfFundraisingEvent(nameOfTheFundraisingEvent)
                 .currencyOfTheMoneyAccount(currency)
-                .collectionBoxId(null)
                 .amountOfMoney(BigDecimal.ZERO)
                 .build();
         fundraisingEventRepository.save(newFundraisingEvent);
@@ -61,7 +62,6 @@ class FundraisingEventService {
         BigDecimal newAccountBalance = fundraisingEvent.amountOfMoney().add(collectedMoneyInTargetCurrency);
         FundraisingEvent fundraisingEventAfterTransferingMoney = FundraisingEvent.builder()
                 .id(fundraisingEvent.id())
-                .collectionBoxId(collectionBoxId)
                 .currencyOfTheMoneyAccount(targetCurrency)
                 .nameOfFundraisingEvent(fundraisingEvent.nameOfFundraisingEvent())
                 .amountOfMoney(newAccountBalance)
@@ -84,7 +84,7 @@ class FundraisingEventService {
         return amountOfMoneyToTransferInProperCurrency;
     }
 
-    private FundraisingEvent findFundraisingEventById(String fundraisingEventId) {
+    FundraisingEvent findFundraisingEventById(String fundraisingEventId) {
 
         return fundraisingEventRepository.findById(fundraisingEventId).orElseThrow(() -> new FundraisingEventNotFoundException("Fundraising event not found"));
     }

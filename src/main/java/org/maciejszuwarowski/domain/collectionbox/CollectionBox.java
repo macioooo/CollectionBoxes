@@ -1,69 +1,83 @@
 package org.maciejszuwarowski.domain.collectionbox;
 
-import lombok.AllArgsConstructor;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.maciejszuwarowski.domain.collectionbox.exceptions.CollectionBoxCannotBeAssigned;
 import org.maciejszuwarowski.domain.collectionbox.exceptions.MoneyTransferException;
+import org.maciejszuwarowski.domain.fundraisingevent.FundraisingEvent;
 import org.maciejszuwarowski.domain.shared.Currency;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
-@AllArgsConstructor
-class CollectionBox {
-    private final String id;
-    private String fundraisingEventId;
+@Entity
+@Table(name = "collection_boxes")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class CollectionBox {
+    @Id
+    @Column(nullable = false, unique = true)
+    private String id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_fundraising_event_id")
+    private FundraisingEvent assignedFundraisingEvent;
+    @Embedded
     private ContentOfCollectionBox contents;
 
-    CollectionBox(String id, String fundraisingEventId) {
-        this.id = id;
-        this.fundraisingEventId = fundraisingEventId;
-        this.contents = new ContentOfCollectionBox();
-    }
-
-    CollectionBox(String id) {
+    public CollectionBox(String id, FundraisingEvent assignedFundraisingEvent) {
         this.id = id;
         this.contents = new ContentOfCollectionBox();
+        this.assignedFundraisingEvent = assignedFundraisingEvent;
     }
 
-    String getId() {
-        return this.id;
+    public CollectionBox(String id) {
+        this.id = id;
+        this.contents = new ContentOfCollectionBox();
+        this.assignedFundraisingEvent = null;
     }
 
-    String getFundraisingEventId() {
-        return this.fundraisingEventId;
+
+    public String getAssignedFundraisingEventIdAsString() {
+        return this.assignedFundraisingEvent != null ? this.assignedFundraisingEvent.id() : null;
     }
 
-    void setFundraisingEventId(String eventId) {
-        if (eventId == null || eventId.trim().isEmpty()) {
-            throw new CollectionBoxCannotBeAssigned("Fundraising event ID cannot be null or empty.");
+    public void assignToFundraisingEvent(FundraisingEvent eventToAssign) {
+        Objects.requireNonNull(eventToAssign, "Fundraising event to assign cannot be null.");
+        if (this.isAssigned()) {
+            throw new CollectionBoxCannotBeAssigned("Box " + getId() + " is already assigned to event " + getAssignedFundraisingEventIdAsString());
         }
-        if (isAssigned()) {
-            throw new CollectionBoxCannotBeAssigned("Box " + getId() + " is already assigned");
+        if (!this.isEmpty()) {
+            throw new CollectionBoxCannotBeAssigned("Box " + getId() + " is not empty and cannot be assigned. Please empty it first.");
         }
-        if (!isEmpty()) {
-            throw new CollectionBoxCannotBeAssigned("Box " + getId() + " is not empty and cannot be assigned");
+        this.assignedFundraisingEvent = eventToAssign;
+    }
+
+    public boolean isEmpty() {
+        if (this.contents == null) {
+            return true;
         }
-        this.fundraisingEventId = id;
+        Map<Currency, BigDecimal> currentContentsMap = this.contents.getContents();
+        return currentContentsMap.values().stream()
+                .allMatch(amount -> amount.compareTo(BigDecimal.ZERO) == 0);
     }
 
-    boolean isEmpty() {
-        return !contents.getContents().values().stream()
-                .anyMatch(amount -> amount.compareTo(BigDecimal.ZERO) > 0);
+    public boolean isAssigned() {
+        return this.assignedFundraisingEvent != null;
     }
 
-    boolean isAssigned() {
-        return fundraisingEventId != null && !fundraisingEventId.trim().isEmpty();
+    public Map<Currency, BigDecimal> getContentDetails() {
+        return this.contents != null ? this.contents.getContents() : Collections.emptyMap();
     }
 
-    Map<Currency, BigDecimal> getContentDetails() {
-        return this.contents.getContents();
+    public BigDecimal getBalance(Currency currency) {
+        return this.contents != null ? this.contents.getAmount(currency) : BigDecimal.ZERO;
     }
 
-    BigDecimal getBalance(Currency currency) {
-        return this.contents.getAmount(currency);
-    }
-
-    void addFunds(Currency currency, BigDecimal amount) {
+    public void addFunds(Currency currency, BigDecimal amount) {
         if (currency == null) {
             throw new MoneyTransferException("Currency cannot be null");
         }
@@ -73,13 +87,19 @@ class CollectionBox {
         this.contents.addMoney(currency, amount);
     }
 
-    Map<Currency, BigDecimal> drainContents() {
+    public Map<Currency, BigDecimal> drainContents() {
         Map<Currency, BigDecimal> drainedMoney = this.contents.getContents();
-        this.contents.clearAll();
+        if (this.contents != null) {
+            this.contents.clearAll();
+        }
         return drainedMoney;
     }
 
-    void emptyContentPermanently() {
-        this.contents.clearAll();
+    public void emptyContentPermanently() {
+
+        if (this.contents != null) {
+            this.contents.clearAll();
+        }
+
     }
 }

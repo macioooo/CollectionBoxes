@@ -2,20 +2,26 @@ package org.maciejszuwarowski.domain.collectionbox;
 
 import lombok.AllArgsConstructor;
 import org.maciejszuwarowski.domain.collectionbox.dto.*;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 import static org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacadeMessages.COLLECTION_BOX_ASSIGNED_SUCCESSFULLY;
 import static org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacadeMessages.COLLECTION_BOX_CREATED_SUCCESSFULLY;
-import static org.maciejszuwarowski.domain.collectionbox.CollectionBoxMapper.mapFromCollectionBoxToPublicInfoDto;
 
 @AllArgsConstructor
+@RestController
 public class CollectionBoxFacade {
 
     private final CollectionBoxService service;
 
     public CollectionBoxInfoMessage createAndAssignCollectionBox(String fundraisingEventId) {
-        service.createCollectionBox(fundraisingEventId);
+        CollectionBox box = service.createCollectionBox();
+        if (fundraisingEventId != null) {
+            if (!fundraisingEventId.trim().isEmpty()) {
+                service.assignCollectionBox(box.getId(), fundraisingEventId);
+            }
+        }
         return CollectionBoxInfoMessage.builder()
                 .message(COLLECTION_BOX_CREATED_SUCCESSFULLY.message)
                 .build();

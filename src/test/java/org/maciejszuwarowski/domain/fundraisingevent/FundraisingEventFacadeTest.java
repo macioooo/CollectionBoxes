@@ -1,7 +1,6 @@
 package org.maciejszuwarowski.domain.fundraisingevent;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -154,11 +153,10 @@ class FundraisingEventFacadeTest {
             fundraisingEventFacade = new FundraisingEventFacade(actualFundraisingEventService);
 
             FundraisingEvent event = FundraisingEvent.builder()
-                    .id(existingEventId) // Używamy tego ID
+                    .id(existingEventId)
                     .nameOfFundraisingEvent("Event for Transfers")
                     .currencyOfTheMoneyAccount(eventCurrency)
                     .amountOfMoney(initialEventBalance)
-                    .collectionBoxId(null)
                     .build();
             fundraisingEventRepository.save(event);
         }
@@ -206,7 +204,6 @@ class FundraisingEventFacadeTest {
 
             assertEquals(0, expectedFinalBalance.compareTo(updatedEvent.amountOfMoney()),
                     "Final balance is incorrect. Expected: " + expectedFinalBalance + ", Got: " + updatedEvent.amountOfMoney());
-            assertEquals(collectionBoxId, updatedEvent.collectionBoxId(), "Collection box ID should be updated on the event.");
         }
 
         @Test

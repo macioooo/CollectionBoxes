@@ -3,11 +3,16 @@ package org.maciejszuwarowski.domain.collectionbox;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.maciejszuwarowski.domain.HashGeneratorTestImpl;
 import org.maciejszuwarowski.domain.collectionbox.dto.*;
 import org.maciejszuwarowski.domain.collectionbox.exceptions.*;
+import org.maciejszuwarowski.domain.fundraisingevent.FundraisingEvent;
+import org.maciejszuwarowski.domain.fundraisingevent.FundraisingEventFacade;
 import org.maciejszuwarowski.domain.shared.Currency;
 import org.maciejszuwarowski.domain.shared.HashGenerable;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -19,23 +24,78 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacadeMessages.COLLECTION_BOX_ASSIGNED_SUCCESSFULLY;
 import static org.maciejszuwarowski.domain.collectionbox.CollectionBoxFacadeMessages.COLLECTION_BOX_CREATED_SUCCESSFULLY;
 import static org.maciejszuwarowski.domain.shared.Currency.*;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 public class CollectionBoxFacadeTest {
 
+    private static final String DEFAULT_BOX_ID = "123";
+    FundraisingEvent sampleEvent;
     private CollectionBoxFacade collectionBoxFacade;
     private CollectionBoxRepository collectionBoxRepository;
     private CollectionBoxService collectionBoxService;
     private HashGenerable hashGenerator;
+    @Mock
+    private FundraisingEventFacade fundraisingEventFacade;
 
     @BeforeEach
     void setUp() {
         collectionBoxRepository = new InMemoryCollectionBoxRepositoryImpl();
         hashGenerator = new HashGeneratorTestImpl();
-        collectionBoxService = new CollectionBoxService(collectionBoxRepository, hashGenerator);
+        collectionBoxService = new CollectionBoxService(collectionBoxRepository, fundraisingEventFacade, hashGenerator);
         collectionBoxFacade = new CollectionBoxFacade(collectionBoxService);
+        sampleEvent = FundraisingEvent.builder()
+                .id("event-123")
+                .nameOfFundraisingEvent("Sample Event")
+                .currencyOfTheMoneyAccount(PLN)
+                .amountOfMoney(BigDecimal.ZERO)
+                .build();
 
     }
 
+
+    @Test
+    void shouldThrowCollectionBoxNotFoundExceptionWhenCollectionBoxCannotBeFoundInDatabase() {
+        //given
+        String fundraisingEventId = "213132";
+        //when//then
+        assertThrows(CollectionBoxNotFoundException.class, () -> collectionBoxFacade.assignCollectionBox("testtest", fundraisingEventId));
+    }
+
+    @Test
+    void shouldReturnEmptyAmountsWhenEmptyingAnAlreadyEmptyAndAssignedBox() {
+        //given
+        String eventIdForBox = "eventForEmptyBoxTest";
+
+        FundraisingEvent fundraisingEventForSetup = FundraisingEvent.builder()
+                .id(eventIdForBox)
+                .nameOfFundraisingEvent("testevent")
+                .currencyOfTheMoneyAccount(PLN)
+                .amountOfMoney(BigDecimal.ZERO)
+                .build();
+
+        when(fundraisingEventFacade.getFundraisingEventById(eventIdForBox)).thenReturn(fundraisingEventForSetup);
+
+        CollectionBox box = collectionBoxService.createCollectionBox();
+        String actualBoxId = box.getId();
+        collectionBoxService.assignCollectionBox(actualBoxId, eventIdForBox);
+
+        //when
+        EmptiedCollectionBoxDto resultDto = collectionBoxFacade.emptyCollectionBoxAndGetDataTransfer(actualBoxId);
+        //then
+        assertNotNull(resultDto);
+        assertEquals(eventIdForBox, resultDto.fundraisingEventId());
+        assertNotNull(resultDto.collectedAmount());
+
+        assertTrue(resultDto.collectedAmount().values().stream().allMatch(amount -> amount.compareTo(BigDecimal.ZERO) == 0));
+        assertEquals(Currency.values().length, resultDto.collectedAmount().size());
+
+        Optional<CollectionBox> boxOptionalAfterDrain = collectionBoxRepository.findById(actualBoxId);
+        assertTrue(boxOptionalAfterDrain.isPresent());
+        assertTrue(boxOptionalAfterDrain.get().isEmpty());
+        assertTrue(boxOptionalAfterDrain.get().isAssigned());
+        assertEquals(eventIdForBox, boxOptionalAfterDrain.get().getAssignedFundraisingEventIdAsString());
+    }
 
     @Nested
     class CreatingCollectionBoxTests {
@@ -43,15 +103,17 @@ public class CollectionBoxFacadeTest {
         void shouldCreateAndAssignCollectionBoxSuccessfully() {
             //given
             String fundraisingEventId = "event-123";
+            when(fundraisingEventFacade.getFundraisingEventById(fundraisingEventId)).thenReturn(sampleEvent);
             //when
             CollectionBoxInfoMessage result = collectionBoxFacade.createAndAssignCollectionBox(fundraisingEventId);
             List<CollectionBox> collectionBoxes = collectionBoxRepository.findAll();
-            CollectionBox createdCollectionBox = collectionBoxes.getFirst();
+            CollectionBox createdCollectionBox = collectionBoxes.get(0);
             //then
             assertNotNull(result);
             assertEquals(COLLECTION_BOX_CREATED_SUCCESSFULLY.message, result.message());
             assertEquals(collectionBoxes.size(), 1);
-            assertEquals(createdCollectionBox.getFundraisingEventId(), fundraisingEventId);
+            assertNotNull(createdCollectionBox.getAssignedFundraisingEvent());
+            assertEquals(fundraisingEventId, createdCollectionBox.getAssignedFundraisingEvent().id());
             assertTrue(createdCollectionBox.isAssigned());
             assertTrue(createdCollectionBox.isEmpty());
         }
@@ -62,12 +124,12 @@ public class CollectionBoxFacadeTest {
             //when
             CollectionBoxInfoMessage result = collectionBoxFacade.createCollectionBoxWithoutAssigning();
             List<CollectionBox> collectionBoxes = collectionBoxRepository.findAll();
-            CollectionBox createdCollectionBox = collectionBoxes.getFirst();
+            CollectionBox createdCollectionBox = collectionBoxes.get(0);
             //then
             assertNotNull(result);
             assertEquals(COLLECTION_BOX_CREATED_SUCCESSFULLY.message, result.message());
             assertEquals(collectionBoxes.size(), 1);
-            assertEquals(createdCollectionBox.getFundraisingEventId(), null);
+            assertNull(createdCollectionBox.getAssignedFundraisingEventIdAsString());
             assertFalse(createdCollectionBox.isAssigned());
             assertTrue(createdCollectionBox.isEmpty());
         }
@@ -84,7 +146,7 @@ public class CollectionBoxFacadeTest {
             assertNotNull(result);
             assertEquals(COLLECTION_BOX_CREATED_SUCCESSFULLY.message, result.message());
             assertEquals(collectionBoxes.size(), 1);
-            assertEquals(createdCollectionBox.getFundraisingEventId(), "");
+            assertEquals(createdCollectionBox.getAssignedFundraisingEventIdAsString(), null);
             assertFalse(createdCollectionBox.isAssigned());
             assertTrue(createdCollectionBox.isEmpty());
         }
@@ -97,76 +159,65 @@ public class CollectionBoxFacadeTest {
         void shouldAssignCollectionBoxToFundraisingEvent() {
             //given
             String fundraisingEventId = "testevent123";
-            String fixedCollectionBoxId = "123";
-            //when
-            collectionBoxFacade.createCollectionBoxWithoutAssigning();
-            Optional<CollectionBox> optionalCollectionBox = collectionBoxRepository.findById(fixedCollectionBoxId);
-            CollectionBox collectionBox = optionalCollectionBox.orElseThrow(() -> new AssertionError("CollectionBox not found"));
+            CollectionBox boxToAssign = new CollectionBox(DEFAULT_BOX_ID);
+            collectionBoxRepository.save(boxToAssign);
+
+
+            Optional<CollectionBox> optionalCollectionBox = collectionBoxRepository.findById(DEFAULT_BOX_ID);
+            CollectionBox collectionBox = optionalCollectionBox.orElseThrow(() -> new AssertionError("CollectionBox not found for setup"));
             assertFalse(collectionBox.isAssigned());
+
+            FundraisingEvent event = FundraisingEvent.builder().id(fundraisingEventId).nameOfFundraisingEvent("Test Event").currencyOfTheMoneyAccount(PLN).amountOfMoney(BigDecimal.ZERO).build();
+            when(fundraisingEventFacade.getFundraisingEventById(fundraisingEventId)).thenReturn(event);
+
+            //when
+            CollectionBoxInfoMessage actualMessage = collectionBoxFacade.assignCollectionBox(DEFAULT_BOX_ID, fundraisingEventId);
+
             //then
-            CollectionBoxInfoMessage actualMessage = collectionBoxFacade.assignCollectionBox(fixedCollectionBoxId, fundraisingEventId);
             assertEquals(COLLECTION_BOX_ASSIGNED_SUCCESSFULLY.message, actualMessage.message());
-            assertTrue(collectionBox.isAssigned());
-
-        }
-
-        @Test
-        void shouldThrowCollectionBoxCannotBeAssignedWhenEventIdIsNull() {
-            //given
-            String fixedCollectionBoxId = "123";
-            //when
-            collectionBoxFacade.createCollectionBoxWithoutAssigning();
-            Optional<CollectionBox> optionalCollectionBox = collectionBoxRepository.findById(fixedCollectionBoxId);
-            CollectionBox collectionBox = optionalCollectionBox.orElseThrow(() -> new AssertionError("CollectionBox not found"));
-            assertFalse(collectionBox.isAssigned());
-            //then
-            assertThrows(CollectionBoxCannotBeAssigned.class, () -> collectionBoxFacade.assignCollectionBox("123", null), "Fundraising event ID cannot be null or empty.");
-
-        }
-
-        @Test
-        void shouldThrowCollectionBoxCannotBeAssignedWhenEventIdIsEmpty() {
-            //given
-            String fixedCollectionBoxId = "123";
-            String emptyFundraisingEventId = "";
-            //when
-            collectionBoxFacade.createCollectionBoxWithoutAssigning();
-            Optional<CollectionBox> optionalCollectionBox = collectionBoxRepository.findById(fixedCollectionBoxId);
-            CollectionBox collectionBox = optionalCollectionBox.orElseThrow(() -> new AssertionError("CollectionBox not found"));
-            assertFalse(collectionBox.isAssigned());
-            //then
-            assertThrows(CollectionBoxCannotBeAssigned.class, () -> collectionBoxFacade.assignCollectionBox("123", emptyFundraisingEventId), "Fundraising event ID cannot be null or empty.");
-
+            CollectionBox assignedBox = collectionBoxRepository.findById(DEFAULT_BOX_ID).orElseThrow(); // Re-fetch to check persisted state
+            assertTrue(assignedBox.isAssigned());
+            assertNotNull(assignedBox.getAssignedFundraisingEvent());
+            assertEquals(fundraisingEventId, assignedBox.getAssignedFundraisingEvent().id());
         }
 
         @Test
         void shouldThrowCollectionBoxCannotBeAssignedWhenCollectionBoxIsNotEmpty() {
             //given
-            String fixedCollectionBoxId = "123";
-            String emptyFundraisingEventId = "testtest123";
-            //when
-            collectionBoxFacade.createCollectionBoxWithoutAssigning();
-            Optional<CollectionBox> optionalCollectionBox = collectionBoxRepository.findById(fixedCollectionBoxId);
-            CollectionBox collectionBox = optionalCollectionBox.orElseThrow(() -> new AssertionError("CollectionBox not found"));
-            assertFalse(collectionBox.isAssigned());
-            collectionBox.addFunds(USD, new BigDecimal("10"));
-            //then
-            assertThrows(CollectionBoxCannotBeAssigned.class, () -> collectionBoxFacade.assignCollectionBox("123", emptyFundraisingEventId), "Box 123 is not empty and cannot be assigned");
+            String fundraisingEventId = "testtest123";
 
+            CollectionBox collectionBox = new CollectionBox(DEFAULT_BOX_ID);
+            collectionBox.addFunds(USD, new BigDecimal("10"));
+            collectionBoxRepository.save(collectionBox);
+
+            FundraisingEvent event = FundraisingEvent.builder().id(fundraisingEventId).nameOfFundraisingEvent("Test Event").currencyOfTheMoneyAccount(PLN).amountOfMoney(BigDecimal.ZERO).build();
+            when(fundraisingEventFacade.getFundraisingEventById(fundraisingEventId)).thenReturn(event);
+
+            //when
+            //then
+            assertThrows(CollectionBoxCannotBeAssigned.class, () -> collectionBoxFacade.assignCollectionBox(DEFAULT_BOX_ID, fundraisingEventId), "Box 123 is not empty and cannot be assigned");
         }
 
         @Test
         void shouldThrowCollectionBoxCannotBeAssignedWhenCollectionBoxIsAlreadyAssigned() {
             //given
-            String fundraisingEventId = "testevent123";
-            String fixedCollectionBoxId = "123";
-            //when
-            collectionBoxFacade.createAndAssignCollectionBox(fundraisingEventId);
-            Optional<CollectionBox> optionalCollectionBox = collectionBoxRepository.findById(fixedCollectionBoxId);
-            CollectionBox collectionBox = optionalCollectionBox.orElseThrow(() -> new AssertionError("CollectionBox not found"));
+            String fundraisingEventId1 = "testevent123";
+            String fundraisingEventId2 = "anotherEvent456";
+
+            FundraisingEvent firstEvent = FundraisingEvent.builder().id(fundraisingEventId1).nameOfFundraisingEvent("First Event").currencyOfTheMoneyAccount(PLN).amountOfMoney(BigDecimal.ZERO).build();
+            when(fundraisingEventFacade.getFundraisingEventById(fundraisingEventId1)).thenReturn(firstEvent);
+
+            collectionBoxFacade.createAndAssignCollectionBox(fundraisingEventId1);
+
+            Optional<CollectionBox> optionalCollectionBox = collectionBoxRepository.findById(DEFAULT_BOX_ID);
+            CollectionBox collectionBox = optionalCollectionBox.orElseThrow(() -> new AssertionError("CollectionBox not found after initial assignment"));
             assertTrue(collectionBox.isAssigned());
+
+            FundraisingEvent secondEvent = FundraisingEvent.builder().id(fundraisingEventId2).nameOfFundraisingEvent("Second Event").currencyOfTheMoneyAccount(EUR).amountOfMoney(BigDecimal.ZERO).build();
+            when(fundraisingEventFacade.getFundraisingEventById(fundraisingEventId2)).thenReturn(secondEvent);
+
             //then
-            assertThrows(CollectionBoxCannotBeAssigned.class, () -> collectionBoxFacade.assignCollectionBox("123", fundraisingEventId), "Box 123 is already assigned");
+            assertThrows(CollectionBoxCannotBeAssigned.class, () -> collectionBoxFacade.assignCollectionBox(DEFAULT_BOX_ID, fundraisingEventId2), "Box 123 is already assigned");
         }
 
         @Test
@@ -174,9 +225,8 @@ public class CollectionBoxFacadeTest {
             //given
             String fundraisingEventId = "213132";
             //when//then
-            assertThrows(CollectionBoxNotFoundException.class, () -> collectionBoxFacade.assignCollectionBox("testtest", fundraisingEventId));
+            assertThrows(CollectionBoxNotFoundException.class, () -> collectionBoxFacade.assignCollectionBox("testtestNonExistent", fundraisingEventId));
         }
-
     }
 
     @Nested
@@ -197,6 +247,8 @@ public class CollectionBoxFacadeTest {
         @Test
         void shouldClearTheMoneyAndDeleteCollectionBoxFromDatabaseWhenIsAssigned() {
             //given
+            String fundraisingEventId = "Testtess";
+            when(fundraisingEventFacade.getFundraisingEventById(fundraisingEventId)).thenReturn(new FundraisingEvent(fundraisingEventId, "test", USD, BigDecimal.ZERO));
             collectionBoxFacade.createAndAssignCollectionBox("Testtess");
             Optional<CollectionBox> optionalCollectionBox = collectionBoxRepository.findById("123");
             CollectionBox collectionBox = optionalCollectionBox.orElse(new CollectionBox(null));
@@ -227,12 +279,13 @@ public class CollectionBoxFacadeTest {
     @Nested
     class AddingMoneyToCollectionBoxTests {
         private String existingBoxId;
-        private String fundraisingEventId = "eventtest123";
+        private FundraisingEvent fundraisingEvent;
 
         @BeforeEach
         void addMoneySetup() {
+            fundraisingEvent = new FundraisingEvent("testid", "testname", USD, BigDecimal.ZERO);
             this.existingBoxId = UUID.randomUUID().toString();
-            CollectionBox box = new CollectionBox(this.existingBoxId, this.fundraisingEventId);
+            CollectionBox box = new CollectionBox(this.existingBoxId, fundraisingEvent);
             collectionBoxRepository.save(box);
         }
 
@@ -304,7 +357,7 @@ public class CollectionBoxFacadeTest {
             //checking if money in collectionbox has changed
             Optional<CollectionBox> boxOptional = collectionBoxRepository.findById(existingBoxId);
             assertTrue(boxOptional.isPresent());
-            assertEquals(0, BigDecimal.ZERO.compareTo(boxOptional.get().getBalance(Currency.PLN)));
+            assertEquals(0, BigDecimal.ZERO.compareTo(boxOptional.get().getBalance(PLN)));
         }
 
         @Test
@@ -359,14 +412,14 @@ public class CollectionBoxFacadeTest {
         @Test
         void shouldReturnListOfAllExistingBoxes() {
             //given
-            CollectionBox box1 = new CollectionBox(UUID.randomUUID().toString(), "testEvent1");
+            CollectionBox box1 = new CollectionBox(UUID.randomUUID().toString(), new FundraisingEvent("one", "first", USD, BigDecimal.ZERO));
             box1.addFunds(PLN, BigDecimal.TEN);
             collectionBoxRepository.save(box1);
 
             CollectionBox box2 = new CollectionBox(UUID.randomUUID().toString());
             collectionBoxRepository.save(box2);
 
-            CollectionBox box3 = new CollectionBox(UUID.randomUUID().toString(), "testEvent3");
+            CollectionBox box3 = new CollectionBox(UUID.randomUUID().toString(), new FundraisingEvent("two", "second", PLN, BigDecimal.ZERO));
             collectionBoxRepository.save(box3);
 
             //when
@@ -394,12 +447,13 @@ public class CollectionBoxFacadeTest {
 
 
         private String boxId;
-        private String eventId = "eventIdTest";
+        private FundraisingEvent fundraisingEvent;
 
         @BeforeEach
         void emptySetup() {
             this.boxId = UUID.randomUUID().toString();
-            CollectionBox box = new CollectionBox(this.boxId, this.eventId);
+            fundraisingEvent = new FundraisingEvent("id", "name", USD, BigDecimal.ZERO);
+            CollectionBox box = new CollectionBox(this.boxId, fundraisingEvent);
             box.addFunds(Currency.PLN, new BigDecimal("150.75"));
             box.addFunds(Currency.USD, new BigDecimal("50.00"));
             collectionBoxRepository.save(box);
@@ -414,7 +468,7 @@ public class CollectionBoxFacadeTest {
             //when
             EmptiedCollectionBoxDto resultDto = collectionBoxFacade.emptyCollectionBoxAndGetDataTransfer(boxId);
             assertNotNull(resultDto);
-            assertEquals(eventId, resultDto.fundraisingEventId());
+            assertEquals(fundraisingEvent.id(), resultDto.fundraisingEventId());
             assertNotNull(resultDto.collectedAmount());
             assertThat(resultDto.collectedAmount())
                     .containsEntry(PLN, expectedPln)
@@ -429,7 +483,7 @@ public class CollectionBoxFacadeTest {
             assertTrue(boxOptional.isPresent());
             CollectionBox emptiedBox = boxOptional.get();
             assertTrue(emptiedBox.isEmpty());
-            assertEquals(eventId, emptiedBox.getFundraisingEventId());
+            assertEquals(boxId, emptiedBox.getId());
         }
 
         @Test
@@ -460,33 +514,7 @@ public class CollectionBoxFacadeTest {
             assertTrue(boxOptional.isPresent());
             assertFalse(boxOptional.get().isEmpty());
         }
-
-        @Test
-        void shouldReturnEmptyColectionBoxWhenEmptyingAnAlreadyEmptyBox() {
-            //given
-            String emptyBoxId = UUID.randomUUID().toString();
-            String emptyBoxEventId = "emptyBoxEventIdTest";
-            CollectionBox emptyBox = new CollectionBox(emptyBoxId, emptyBoxEventId);
-            collectionBoxRepository.save(emptyBox);
-
-            //when
-            EmptiedCollectionBoxDto resultDto = collectionBoxFacade.emptyCollectionBoxAndGetDataTransfer(emptyBoxId);
-
-            //then
-            assertNotNull(resultDto);
-            assertEquals(emptyBoxEventId, resultDto.fundraisingEventId());
-            assertNotNull(resultDto.collectedAmount());
-            for (Currency currency : Currency.values()) {
-                BigDecimal amount = resultDto.collectedAmount().get(currency);
-                assertNotNull(amount);
-                assertEquals(0, BigDecimal.ZERO.compareTo(amount));
-            }
-
-            //CollectionBox should still be empty
-            Optional<CollectionBox> boxOptional = collectionBoxRepository.findById(emptyBoxId);
-            assertTrue(boxOptional.isPresent());
-            assertTrue(boxOptional.get().isEmpty());
-        }
     }
-
 }
+
+

@@ -4,10 +4,12 @@ import lombok.AllArgsConstructor;
 import org.maciejszuwarowski.domain.fundraisingevent.dto.FinancialReportDto;
 import org.maciejszuwarowski.domain.fundraisingevent.dto.FundraisingEventMessageDto;
 import org.maciejszuwarowski.domain.shared.Currency;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @AllArgsConstructor
+@RestController
 public class FundraisingEventFacade {
     private final FundraisingEventService fundraisingEventService;
 
@@ -21,6 +23,11 @@ public class FundraisingEventFacade {
 
     public FundraisingEventMessageDto transferMoneyFromCollectionBox(String collectionBoxId) {
         return fundraisingEventService.fetchMoneyFromCollectionBoxAndTransferItToFundraisingEvent(collectionBoxId);
+    }
+
+    public FundraisingEvent getFundraisingEventById(String fundraisingEventId) {
+        return fundraisingEventService.findFundraisingEventById(fundraisingEventId);
+
     }
 
 
