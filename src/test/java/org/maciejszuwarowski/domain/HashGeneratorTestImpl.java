@@ -6,7 +6,7 @@ public class HashGeneratorTestImpl implements HashGenerable {
 
     private final String hash;
 
-    HashGeneratorTestImpl(String hash) {
+    public HashGeneratorTestImpl(String hash) {
         this.hash = hash;
     }
     public HashGeneratorTestImpl() {
