@@ -14,7 +14,6 @@ import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.maciejszuwarowski.domain.shared.Currency.*;
 
@@ -37,15 +36,20 @@ public class CurrencyExchangeService {
         }
 
         ExchangeRateTable table = exchangeRateFetcher.fetchCurrencyExchangeRateTable();
-
-        Map<Currency, BigDecimal> mapOfExchangeRatesToPln = table.rates().stream()
-                .filter(rate -> AVAILABLE_CURRENCIES.contains(Currency.fromCode(rate.code())))
-                .collect(Collectors.toMap(rate -> Currency.fromCode(rate.code()), Rate::mid));
+        Map<Currency, BigDecimal> mapOfExchangeRatesToPln = new HashMap<>();
+        for (Rate rate : table.rates()) {
+            Currency currency = fromCode(rate.code()).orElse(null);
+            if (currency == null || mapOfExchangeRatesToPln.containsKey(currency)) {
+                continue;
+            }
+            mapOfExchangeRatesToPln.put(currency, rate.mid());
+        }
 
         mapOfExchangeRatesToPln.put(PLN, BigDecimal.ONE);
 
         for (Currency availableCurrency : AVAILABLE_CURRENCIES) {
             if (!mapOfExchangeRatesToPln.containsKey(availableCurrency)) {
+                System.out.println("VALUES: " + mapOfExchangeRatesToPln.values());
                 throw new MissingExchangeRateException("Missing PLN-based exchange rate for an available currency: " + availableCurrency);
             }
         }

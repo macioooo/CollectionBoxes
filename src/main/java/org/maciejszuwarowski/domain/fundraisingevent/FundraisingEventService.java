@@ -57,6 +57,7 @@ class FundraisingEventService {
     @Transactional
     TransferResultDto fetchMoneyFromCollectionBoxAndTransferItToFundraisingEvent(String collectionBoxId) {
         //getting data from colleciton box facade
+
         EmptiedCollectionBoxDto emptiedCollectionBoxDto = collectionBoxFacade.emptyCollectionBoxAndGetDataTransfer(collectionBoxId);
         String fundraisingEventId = emptiedCollectionBoxDto.fundraisingEventId();
         //prep variable for adding money to fundraising event account
